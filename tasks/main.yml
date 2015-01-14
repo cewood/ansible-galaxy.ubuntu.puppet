@@ -9,10 +9,22 @@
     - install
     - packages
 
-- name: Install PuppetLabs release DEB for Debian derivates
-  apt: pkg=puppet state={{ item }} update_cache=yes
+- name: Download PuppetLabs release DEB for Debian derivates
+  get_url:
+    url: "{{ item }}"
+    dest: /tmp
   with_items:
-    - "{{ puppet_release_rpm_baseurl }}/puppetlabs-release-{{ ansible_distribution_release }}.deb"
+    - "{{ puppet_release_apt_baseurl }}/puppetlabs-release-{{ ansible_distribution_release }}.deb"
+  when: ansible_os_family == 'Debian'
+  tags:
+    - repo
+    - install
+    - packages
+
+- name: Install PuppetLabs release DEB for Debian derivates
+  apt: deb={{ item }} state={{ puppet_release_package_state }} update_cache=yes
+  with_items:
+    - "/tmp/puppetlabs-release-{{ ansible_distribution_release }}.deb"
   when: ansible_os_family == 'Debian'
   tags:
     - repo
@@ -37,19 +49,19 @@
     - install
     - packages
 
-- name: Disable puppet service
-  service: name=puppet enabled=no state=stopped
-  tags:
-    - install
-    - service
-    - disable
-
-- name: Enable puppet service
-  service: name=puppet enabled=yes state=started
-  tags:
-    - install
-    - service
-    - enable
+# - name: Disable puppet service
+#   service: name=puppet enabled=no state=stopped
+#   tags:
+#     - install
+#     - service
+#     - disable
+# 
+# - name: Enable puppet service
+#   service: name=puppet enabled=yes state=started
+#   tags:
+#     - install
+#     - service
+#     - enable
 
 # The puppet agent return codes are interesting
 #
@@ -64,9 +76,9 @@
 #
 # Credit to Alex Schultz github.com/mwhahaha
 
-- name: Force run of puppet agent
-  command: /usr/bin/puppet agent apply --test --color=false --server={{ puppet_master }} --environment={{ puppet_environment }} --waitforcert {{ puppet_waitforcert }}
-  register: puppet_agent_apply
-  failed_when: not puppet_agent_apply.rc in [0, 2]
-  tags:
-    - run
+# - name: Force run of puppet agent
+#   command: /usr/bin/puppet agent apply --test --color=false --server={{ puppet_master }} --environment={{ puppet_environment }} --waitforcert {{ puppet_waitforcert }}
+#   register: puppet_agent_apply
+#   failed_when: not puppet_agent_apply.rc in [0, 2]
+#   tags:
+#     - run
